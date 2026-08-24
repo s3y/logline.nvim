@@ -25,27 +25,27 @@ describe('statement.render', function()
     label = 'money.ts:12 parsePence value:',
     variable = 'value',
     commentstring = '// %s',
-    tag = 'logline',
+    tag = '',
   }
 
   it('builds a log call with the label and the variable', function()
-    assert.equals("console.log('money.ts:12 parsePence value:', value) // logline",
+    assert.equals("console.log('money.ts:12 parsePence value:', value)",
       statement.render(base))
   end)
 
   it('respects the indent of the reference line', function()
-    assert.equals("    console.log('money.ts:12 parsePence value:', value) // logline",
+    assert.equals("    console.log('money.ts:12 parsePence value:', value)",
       statement.render(vim.tbl_extend('force', base, { indent = '    ' })))
   end)
 
-  it('uses the comment syntax of the filetype', function()
-    local rendered = statement.render(vim.tbl_extend('force', base, { commentstring = '-- %s' }))
-    assert.is_truthy(rendered:find('-- logline', 1, true))
+  it('appends a comment marker only when a tag is configured', function()
+    local rendered = statement.render(vim.tbl_extend('force', base, { commentstring = '-- %s', tag = 'DEBUG' }))
+    assert.is_truthy(rendered:find('-- DEBUG', 1, true))
   end)
 
-  it('still tags the line when the filetype has no commentstring', function()
-    local rendered = statement.render(vim.tbl_extend('force', base, { commentstring = '' }))
-    assert.is_truthy(rendered:find('logline', 1, true))
+  it('moves a configured tag into the message when there is no commentstring', function()
+    local rendered = statement.render(vim.tbl_extend('force', base, { commentstring = '', tag = 'DEBUG' }))
+    assert.is_truthy(rendered:find('DEBUG', 1, true))
   end)
 
   it('handles a template with no variable slot for the label', function()
@@ -55,19 +55,24 @@ describe('statement.render', function()
 end)
 
 describe('statement.is_logline', function()
-  it('recognises a line it wrote', function()
-    assert.is_true(statement.is_logline("console.log('a:', a) // logline", 'logline'))
+  it('recognises a line it wrote by the shape of its label', function()
+    assert.is_true(statement.is_logline("console.log('money.ts:4 f value:', value)", ''))
   end)
 
   it('ignores an ordinary line', function()
-    assert.is_false(statement.is_logline("const a = 1", 'logline'))
+    assert.is_false(statement.is_logline("const a = 1", ''))
   end)
 
   it('ignores a console call the user wrote themselves', function()
-    assert.is_false(statement.is_logline("console.log('hello')", 'logline'))
+    assert.is_false(statement.is_logline("console.log('hello')", ''))
+    assert.is_false(statement.is_logline("console.log('a:', a)", ''))
   end)
 
-  it('recognises a line it wrote that has since been commented out', function()
-    assert.is_true(statement.is_logline("// console.log('a:', a) // logline", 'logline'))
+  it('recognises one that has since been commented out', function()
+    assert.is_true(statement.is_logline("// console.log('money.ts:4 f value:', value)", ''))
+  end)
+
+  it('still honours an explicit tag when one is configured', function()
+    assert.is_true(statement.is_logline("console.log('x') // DEBUG", 'DEBUG'))
   end)
 end)

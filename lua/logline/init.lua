@@ -6,7 +6,7 @@ local templates = require('logline.templates')
 local M = {}
 
 local defaults = {
-  tag = 'logline',
+  tag = '',
   templates = {},
 }
 
@@ -33,8 +33,8 @@ function M.log(level, opts)
   end
 
   local variable = context.variable(opts)
-  if variable == '' then
-    vim.notify('logline: nothing under the cursor to log', vim.log.levels.WARN)
+  if not context.is_loggable(variable) then
+    vim.notify('logline: nothing loggable under the cursor', vim.log.levels.WARN)
     return false
   end
 
