@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Runs the suite and exits non-zero if anything failed. PlenaryBustedDirectory
+# does not set a usable exit code, so the summary lines are the source of truth.
+set -uo pipefail
+
+output=$(nvim --headless -u tests/minimal.lua \
+  -c "PlenaryBustedDirectory tests { minimal_init = 'tests/minimal.lua' }" \
+  -c 'qa!' 2>&1)
+
+printf '%s\n' "$output"
+
+clean=$(printf '%s' "$output" | sed 's/\x1b\[[0-9;]*m//g')
+passed=$(printf '%s' "$clean" | awk '/^Success: /  { total += $2 } END { print total + 0 }')
+failed=$(printf '%s' "$clean" | awk '/^Failed : /   { total += $3 } END { print total + 0 }')
+errored=$(printf '%s' "$clean" | awk '/^Errors : /  { total += $3 } END { print total + 0 }')
+
+printf '\n%s passed, %s failed, %s errored\n' "$passed" "$failed" "$errored"
+
+if [ "$failed" -ne 0 ] || [ "$errored" -ne 0 ] || [ "$passed" -eq 0 ]; then
+  exit 1
+fi

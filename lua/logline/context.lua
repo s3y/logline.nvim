@@ -33,7 +33,9 @@ end
 ---@return string|nil
 function M.enclosing(bufnr)
   local parsed = pcall(function()
-    local parser = vim.treesitter.get_parser(bufnr)
+    local filetype = vim.bo[bufnr].filetype
+    local language = vim.treesitter.language.get_lang(filetype) or filetype
+    local parser = vim.treesitter.get_parser(bufnr, language)
     if parser then parser:parse() end
   end)
   if not parsed then return nil end
@@ -52,6 +54,15 @@ function M.enclosing(bufnr)
 end
 
 ---The identifier the cursor is on, or the visual selection.
+---Whether a captured string is worth logging, rather than punctuation the
+---cursor happened to be sitting on.
+---@param value string
+---@return boolean
+function M.is_loggable(value)
+  if not value or value == '' then return false end
+  return value:match('^[%w_$][%w_$%.%[%]%-\'"]*$') ~= nil
+end
+
 ---@param opts { visual: boolean|nil }|nil
 ---@return string
 function M.variable(opts)
