@@ -9,7 +9,7 @@ so adding a language is one table entry.
 
 ```
 const subtotal = 1
-console.log('money.ts:1 formatPence subtotal:', subtotal) // logline
+console.log('money.ts:1 formatPence subtotal:', subtotal)
 ```
 
 File, line, enclosing function and variable name, so a wall of output still
@@ -52,7 +52,7 @@ No keymaps are set for you. Requires Neovim 0.10 or later, and `ripgrep` for
 
 ```lua
 require('logline').setup({
-  tag = 'logline',
+  tag = '',
   templates = {
     typescript = { log = 'logger.debug(%s)' },
     zig = { log = 'std.debug.print(%s)' },
@@ -60,9 +60,11 @@ require('logline').setup({
 })
 ```
 
-`tag` is the marker appended as a comment to each inserted line. It is how
-`delete`, `commenttoggle` and `search` find them again, and it keeps the tag out
-of your program's output.
+`tag` is empty by default, so nothing is appended to the line. Statements are
+recognised by the shape of their label (`file:line ... variable:`), which means
+your code stays clean and `delete`, `commenttoggle` and `search` still find
+them. Set a tag if you want an explicit marker as well; it is appended as a
+comment so it never reaches your program's output.
 
 `templates` is merged over the shipped defaults, so you can override one level of
 one language without restating the rest.
@@ -75,15 +77,18 @@ Lua uses `vim.print` and routes errors through `vim.notify`. PHP uses
 `error_log`. Shell sends errors to stderr. Anything not listed refuses rather
 than guessing, and tells you which filetype it wanted.
 
-## Why the tag is a comment
+## How statements are found again
 
-Putting the marker in a trailing comment rather than inside the printed string
-keeps your output clean while still making the lines findable. Comment syntax
-comes from the buffer's `commentstring`, so it is correct per language without
-the plugin knowing anything about it.
+Nothing is added to the line. The label already carries a distinctive shape,
+`file:line` followed by the variable name and a colon, all inside a quoted
+string. That is what `delete`, `commenttoggle` and `search` match on.
 
-For a filetype with no `commentstring`, the tag moves into the message so the
-line can still be found.
+A `console.log('hello')` you wrote by hand does not match, and neither does
+`console.log('a:', a)`. Commented-out statements still do, so
+`commenttoggle` then `delete` works.
+
+If you would rather have an explicit marker, set `tag` and it is appended as a
+comment using the buffer's `commentstring`.
 
 ## Tests
 

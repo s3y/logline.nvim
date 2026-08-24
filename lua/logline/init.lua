@@ -6,7 +6,7 @@ local templates = require('logline.templates')
 local M = {}
 
 local defaults = {
-  tag = 'logline',
+  tag = '',
   templates = {},
 }
 
